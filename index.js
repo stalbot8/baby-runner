@@ -802,7 +802,7 @@
                 this.distanceMeter.setHighScore(this.highestScore);
             }
             
-            if (!this.gameOver && this.distanceRan > 1000) {
+            if (!this.gameOver && this.distanceRan > 100) {
                 showMessage();
             }
 
