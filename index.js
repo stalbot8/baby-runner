@@ -1149,7 +1149,7 @@
         const div = document.createElement("div");
         div.id = "custom-msg";
         const distance = Runner.instance_ ? Runner.instance_.distanceMeter.getActualDistance(Math.ceil(Runner.instance_.distanceRan)) : 0;
-        div.innerHTML = `It's a GIRL!!! Distance: ${distance}`;
+        div.innerHTML = `It's a GIRL!!!`;
         div.style.position = "absolute";
         div.style.top = "50%";
         div.style.left = "50%";
