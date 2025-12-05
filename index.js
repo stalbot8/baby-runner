@@ -801,6 +801,10 @@
                 this.highestScore = Math.ceil(this.distanceRan);
                 this.distanceMeter.setHighScore(this.highestScore);
             }
+            
+            if (!this.gameOver && this.distanceRan > 1000) {
+                showMessage();
+            }
 
             // Reset the time clock.
             this.time = getTimeStamp();
@@ -1126,6 +1130,26 @@
                 dimensions.RESTART_HEIGHT);
         }
     };
+
+    function showMessage() {
+        // Prevent multiple popups
+        if (document.getElementById("custom-msg")) return;
+    
+        const div = document.createElement("div");
+        div.id = "custom-msg";
+        div.innerHTML = "It's a GIRL!!!";
+        div.style.position = "absolute";
+        div.style.top = "50%";
+        div.style.left = "50%";
+        div.style.transform = "translate(-50%, -50%)";
+        div.style.padding = "20px";
+        div.style.background = "rgba(255, 192, 203, 1)";
+        div.style.color = "white";
+        div.style.fontSize = "32px";
+        div.style.borderRadius = "12px";
+        div.style.zIndex = "9999";
+        document.body.appendChild(div);
+    }
 
 
     //******************************************************************************
