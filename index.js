@@ -5,7 +5,7 @@
 (function () {
     'use strict';
     /**
-     * T-Rex runner.
+     * Baby runner.
      * @param {string} outerContainerId Outer containing element id.
      * @param {Object} opt_config
      * @constructor
@@ -30,7 +30,7 @@
         this.canvas = null;
         this.canvasCtx = null;
 
-        this.tRex = null;
+        this.baby = null;
 
         this.distanceMeter = null;
         this.distanceRan = 0;
@@ -53,6 +53,9 @@
         this.resizeTimerId_ = null;
 
         this.playCount = 0;
+
+        // Achievement tracking
+        this.achievementShown = false;
 
         // Sound FX.
         this.audioBuffer = null;
@@ -170,7 +173,7 @@
             PTERODACTYL: { x: 134, y: 2 },
             RESTART: { x: 2, y: 2 },
             TEXT_SPRITE: { x: 655, y: 2 },
-            TREX: { x: 848, y: 2 },
+            BABY: { x: 848, y: 2 },
             STAR: { x: 645, y: 2 }
         },
         HDPI: {
@@ -182,7 +185,7 @@
             PTERODACTYL: { x: 260, y: 2 },
             RESTART: { x: 2, y: 2 },
             TEXT_SPRITE: { x: 1294, y: 2 },
-            TREX: { x: 1678, y: 2 },
+            BABY: { x: 1678, y: 2 },
             STAR: { x: 1276, y: 2 }
         }
     };
@@ -272,10 +275,10 @@
                     case 'GRAVITY':
                     case 'MIN_JUMP_HEIGHT':
                     case 'SPEED_DROP_COEFFICIENT':
-                        this.tRex.config[setting] = value;
+                        this.baby.config[setting] = value;
                         break;
                     case 'INITIAL_JUMP_VELOCITY':
-                        this.tRex.setJumpVelocity(value);
+                        this.baby.setJumpVelocity(value);
                         break;
                     case 'SPEED':
                         this.setSpeed(value);
@@ -378,8 +381,8 @@
             this.distanceMeter = new DistanceMeter(this.canvas,
                 this.spriteDef.TEXT_SPRITE, this.dimensions.WIDTH);
 
-            // Draw t-rex
-            this.tRex = new Trex(this.canvas, this.spriteDef.TREX);
+            // Draw baby
+            this.baby = new Baby(this.canvas, this.spriteDef.BABY);
 
             this.outerContainerEl.appendChild(this.containerEl);
 
@@ -440,7 +443,7 @@
                 this.distanceMeter.calcXPos(this.dimensions.WIDTH);
                 this.clearCanvas();
                 this.horizon.update(0, 0, true);
-                this.tRex.update(0);
+                this.baby.update(0);
 
                 // Outer container and distance meter.
                 if (this.playing || this.crashed || this.paused) {
@@ -449,7 +452,7 @@
                     this.distanceMeter.update(0, Math.ceil(this.distanceRan));
                     this.stop();
                 } else {
-                    this.tRex.draw(0, 0);
+                    this.baby.draw(0, 0);
                 }
 
                 // Game over panel.
@@ -467,11 +470,11 @@
         playIntro: function () {
             if (!this.activated && !this.crashed) {
                 this.playingIntro = true;
-                this.tRex.playingIntro = true;
+                this.baby.playingIntro = true;
 
                 // CSS animation definition.
                 var keyframes = '@-webkit-keyframes intro { ' +
-                    'from { width:' + Trex.config.WIDTH + 'px }' +
+                    'from { width:' + Baby.config.WIDTH + 'px }' +
                     'to { width: ' + this.dimensions.WIDTH + 'px }' +
                     '}';
                 
@@ -505,7 +508,7 @@
             this.setArcadeMode();
             this.runningTime = 0;
             this.playingIntro = false;
-            this.tRex.playingIntro = false;
+            this.baby.playingIntro = false;
             this.containerEl.style.webkitAnimation = '';
             this.playCount++;
 
@@ -538,15 +541,15 @@
             if (this.playing) {
                 this.clearCanvas();
 
-                if (this.tRex.jumping) {
-                    this.tRex.updateJump(deltaTime);
+                if (this.baby.jumping) {
+                    this.baby.updateJump(deltaTime);
                 }
 
                 this.runningTime += deltaTime;
                 var hasObstacles = this.runningTime > this.config.CLEAR_TIME;
 
                 // First jump triggers the intro.
-                if (this.tRex.jumpCount == 1 && !this.playingIntro) {
+                if (this.baby.jumpCount == 1 && !this.playingIntro) {
                     this.playIntro();
                 }
 
@@ -561,7 +564,7 @@
 
                 // Check for collisions.
                 var collision = hasObstacles &&
-                    checkForCollision(this.horizon.obstacles[0], this.tRex);
+                    checkForCollision(this.horizon.obstacles[0], this.baby);
 
                 if (!collision) {
                     this.distanceRan += this.currentSpeed * deltaTime / this.msPerFrame;
@@ -604,8 +607,8 @@
             }
 
             if (this.playing || (!this.activated &&
-                this.tRex.blinkCount < Runner.config.MAX_BLINK_COUNT)) {
-                this.tRex.update(deltaTime);
+                this.baby.blinkCount < Runner.config.MAX_BLINK_COUNT)) {
+                this.baby.update(deltaTime);
                 this.scheduleNextUpdate();
             }
         },
@@ -684,14 +687,15 @@
                         this.loadSounds();
                         this.playing = true;
                         this.update();
+                        hideMessage(); // Clear any existing achievement message
                         if (window.errorPageController) {
                             errorPageController.trackEasterEgg();
                         }
                     }
                     //  Play sound effect and jump on starting the game for the first time.
-                    if (!this.tRex.jumping && !this.tRex.ducking) {
+                    if (!this.baby.jumping && !this.baby.ducking) {
                         this.playSound(this.soundFx.BUTTON_PRESS);
-                        this.tRex.startJump(this.currentSpeed);
+                        this.baby.startJump(this.currentSpeed);
                     }
                 }
 
@@ -703,12 +707,12 @@
 
             if (this.playing && !this.crashed && Runner.keycodes.DUCK[e.keyCode]) {
                 e.preventDefault();
-                if (this.tRex.jumping) {
+                if (this.baby.jumping) {
                     // Speed drop, activated only when jump key is not pressed.
-                    this.tRex.setSpeedDrop();
-                } else if (!this.tRex.jumping && !this.tRex.ducking) {
+                    this.baby.setSpeedDrop();
+                } else if (!this.baby.jumping && !this.baby.ducking) {
                     // Duck.
-                    this.tRex.setDuck(true);
+                    this.baby.setDuck(true);
                 }
             }
         },
@@ -725,10 +729,10 @@
                 e.type == Runner.events.MOUSEDOWN;
 
             if (this.isRunning() && isjumpKey) {
-                this.tRex.endJump();
+                this.baby.endJump();
             } else if (Runner.keycodes.DUCK[keyCode]) {
-                this.tRex.speedDrop = false;
-                this.tRex.setDuck(false);
+                this.baby.speedDrop = false;
+                this.baby.setDuck(false);
             } else if (this.crashed) {
                 // Check that enough time has elapsed before allowing jump key to restart.
                 var deltaTime = getTimeStamp() - this.time;
@@ -740,7 +744,7 @@
                 }
             } else if (this.paused && isjumpKey) {
                 // Reset the jump state
-                this.tRex.reset();
+                this.baby.reset();
                 this.play();
             }
         },
@@ -785,7 +789,7 @@
             this.crashed = true;
             this.distanceMeter.acheivement = false;
 
-            this.tRex.update(100, Trex.status.CRASHED);
+            this.baby.update(100, Baby.status.CRASHED);
 
             // Game over panel.
             if (!this.gameOverPanel) {
@@ -802,7 +806,12 @@
                 this.distanceMeter.setHighScore(this.highestScore);
             }
             
-            if (this.distanceRan > 100) {
+            // Show achievement message only once when reaching 100 for the first time
+            const actualDistance = this.distanceMeter.getActualDistance(Math.ceil(this.distanceRan));
+            console.log("Actual distance:", actualDistance, "Achievement shown:", this.achievementShown);
+            if (actualDistance >= 100 && !this.achievementShown) {
+                console.log("Showing achievement message!");
+                this.achievementShown = true;
                 showMessage();
             }
 
@@ -821,7 +830,7 @@
             if (!this.crashed) {
                 this.playing = true;
                 this.paused = false;
-                this.tRex.update(0, Trex.status.RUNNING);
+                this.baby.update(0, Baby.status.RUNNING);
                 this.time = getTimeStamp();
                 this.update();
             }
@@ -834,13 +843,15 @@
                 this.playing = true;
                 this.crashed = false;
                 this.distanceRan = 0;
+                this.achievementShown = false;
+                hideMessage();
                 this.setSpeed(this.config.SPEED);
                 this.time = getTimeStamp();
                 this.containerEl.classList.remove(Runner.classes.CRASHED);
                 this.clearCanvas();
                 this.distanceMeter.reset(this.highestScore);
                 this.horizon.reset();
-                this.tRex.reset();
+                this.baby.reset();
                 this.playSound(this.soundFx.BUTTON_PRESS);
                 this.invert(true);
                 this.update();
@@ -884,7 +895,7 @@
                 document.visibilityState != 'visible') {
                 this.stop();
             } else if (!this.crashed) {
-                this.tRex.reset();
+                this.baby.reset();
                 this.play();
             }
         },
@@ -1137,7 +1148,8 @@
     
         const div = document.createElement("div");
         div.id = "custom-msg";
-        div.innerHTML = "It's a GIRL!!!";
+        const distance = Runner.instance_ ? Runner.instance_.distanceMeter.getActualDistance(Math.ceil(Runner.instance_.distanceRan)) : 0;
+        div.innerHTML = `It's a GIRL!!! Distance: ${distance}`;
         div.style.position = "absolute";
         div.style.top = "50%";
         div.style.left = "50%";
@@ -1151,27 +1163,34 @@
         document.body.appendChild(div);
     }
 
+    function hideMessage() {
+        const existingMsg = document.getElementById("custom-msg");
+        if (existingMsg) {
+            existingMsg.remove();
+        }
+    }
+
 
     //******************************************************************************
 
     /**
      * Check for a collision.
      * @param {!Obstacle} obstacle
-     * @param {!Trex} tRex T-rex object.
+     * @param {!Baby} baby Baby object.
      * @param {HTMLCanvasContext} opt_canvasCtx Optional canvas context for drawing
      *    collision boxes.
      * @return {Array<CollisionBox>}
      */
-    function checkForCollision(obstacle, tRex, opt_canvasCtx) {
+    function checkForCollision(obstacle, baby, opt_canvasCtx) {
         var obstacleBoxXPos = Runner.defaultDimensions.WIDTH + obstacle.xPos;
 
         // Adjustments are made to the bounding box as there is a 1 pixel white
         // border around the t-rex and obstacles.
-        var tRexBox = new CollisionBox(
-            tRex.xPos + 1,
-            tRex.yPos + 1,
-            tRex.config.WIDTH - 2,
-            tRex.config.HEIGHT - 2);
+        var babyBox = new CollisionBox(
+            baby.xPos + 1,
+            baby.yPos + 1,
+            baby.config.WIDTH - 2,
+            baby.config.HEIGHT - 2);
 
         var obstacleBox = new CollisionBox(
             obstacle.xPos + 1,
@@ -1181,32 +1200,32 @@
 
         // Debug outer box
         if (opt_canvasCtx) {
-            drawCollisionBoxes(opt_canvasCtx, tRexBox, obstacleBox);
+            drawCollisionBoxes(opt_canvasCtx, babyBox, obstacleBox);
         }
 
         // Simple outer bounds check.
-        if (boxCompare(tRexBox, obstacleBox)) {
+        if (boxCompare(babyBox, obstacleBox)) {
             var collisionBoxes = obstacle.collisionBoxes;
-            var tRexCollisionBoxes = tRex.ducking ?
-                Trex.collisionBoxes.DUCKING : Trex.collisionBoxes.RUNNING;
+            var babyCollisionBoxes = baby.ducking ?
+                Baby.collisionBoxes.DUCKING : Baby.collisionBoxes.RUNNING;
 
             // Detailed axis aligned box check.
-            for (var t = 0; t < tRexCollisionBoxes.length; t++) {
+            for (var t = 0; t < babyCollisionBoxes.length; t++) {
                 for (var i = 0; i < collisionBoxes.length; i++) {
                     // Adjust the box to actual positions.
-                    var adjTrexBox =
-                        createAdjustedCollisionBox(tRexCollisionBoxes[t], tRexBox);
+                    var adjBabyBox =
+                        createAdjustedCollisionBox(babyCollisionBoxes[t], babyBox);
                     var adjObstacleBox =
                         createAdjustedCollisionBox(collisionBoxes[i], obstacleBox);
-                    var crashed = boxCompare(adjTrexBox, adjObstacleBox);
+                    var crashed = boxCompare(adjBabyBox, adjObstacleBox);
 
                     // Draw boxes for debug.
                     if (opt_canvasCtx) {
-                        drawCollisionBoxes(opt_canvasCtx, adjTrexBox, adjObstacleBox);
+                        drawCollisionBoxes(opt_canvasCtx, adjBabyBox, adjObstacleBox);
                     }
 
                     if (crashed) {
-                        return [adjTrexBox, adjObstacleBox];
+                        return [adjBabyBox, adjObstacleBox];
                     }
                 }
             }
@@ -1233,10 +1252,10 @@
     /**
      * Draw the collision boxes for debug.
      */
-    function drawCollisionBoxes(canvasCtx, tRexBox, obstacleBox) {
+    function drawCollisionBoxes(canvasCtx, babyBox, obstacleBox) {
         canvasCtx.save();
         canvasCtx.strokeStyle = '#f00';
-        canvasCtx.strokeRect(tRexBox.x, tRexBox.y, tRexBox.width, tRexBox.height);
+        canvasCtx.strokeRect(babyBox.x, babyBox.y, babyBox.width, babyBox.height);
 
         canvasCtx.strokeStyle = '#0f0';
         canvasCtx.strokeRect(obstacleBox.x, obstacleBox.y,
@@ -1247,23 +1266,23 @@
 
     /**
      * Compare two collision boxes for a collision.
-     * @param {CollisionBox} tRexBox
+     * @param {CollisionBox} babyBox
      * @param {CollisionBox} obstacleBox
      * @return {boolean} Whether the boxes intersected.
      */
-    function boxCompare(tRexBox, obstacleBox) {
+    function boxCompare(babyBox, obstacleBox) {
         var crashed = false;
-        var tRexBoxX = tRexBox.x;
-        var tRexBoxY = tRexBox.y;
+        var babyBoxX = babyBox.x;
+        var babyBoxY = babyBox.y;
 
         var obstacleBoxX = obstacleBox.x;
         var obstacleBoxY = obstacleBox.y;
 
         // Axis-Aligned Bounding Box method.
-        if (tRexBox.x < obstacleBoxX + obstacleBox.width &&
-            tRexBox.x + tRexBox.width > obstacleBoxX &&
-            tRexBox.y < obstacleBox.y + obstacleBox.height &&
-            tRexBox.height + tRexBox.y > obstacleBox.y) {
+        if (babyBox.x < obstacleBoxX + obstacleBox.width &&
+            babyBox.x + babyBox.width > obstacleBoxX &&
+            babyBox.y < obstacleBox.y + obstacleBox.height &&
+            babyBox.height + babyBox.y > obstacleBox.y) {
             crashed = true;
         }
 
@@ -1543,12 +1562,12 @@
 
     //******************************************************************************
     /**
-     * T-rex game character.
+     * Baby game character.
      * @param {HTMLCanvas} canvas
      * @param {Object} spritePos Positioning within image sprite.
      * @constructor
      */
-    function Trex(canvas, spritePos) {
+    function Baby(canvas, spritePos) {
         this.canvas = canvas;
         this.canvasCtx = canvas.getContext('2d');
         this.spritePos = spritePos;
@@ -1563,9 +1582,9 @@
         this.animStartTime = 0;
         this.timer = 0;
         this.msPerFrame = 1000 / FPS;
-        this.config = Trex.config;
+        this.config = Baby.config;
         // Current status.
-        this.status = Trex.status.WAITING;
+        this.status = Baby.status.WAITING;
 
         this.jumping = false;
         this.ducking = false;
@@ -1580,10 +1599,10 @@
 
 
     /**
-     * T-rex player config.
+     * Baby player config.
      * @enum {number}
      */
-    Trex.config = {
+    Baby.config = {
         DROP_VELOCITY: -5,
         GRAVITY: 0.6,
         HEIGHT: 47,
@@ -1604,7 +1623,7 @@
      * Used in collision detection.
      * @type {Array<CollisionBox>}
      */
-    Trex.collisionBoxes = {
+    Baby.collisionBoxes = {
         DUCKING: [
             new CollisionBox(1, 18, 55, 25)
         ],
@@ -1623,7 +1642,7 @@
      * Animation states.
      * @enum {string}
      */
-    Trex.status = {
+    Baby.status = {
         CRASHED: 'CRASHED',
         DUCKING: 'DUCKING',
         JUMPING: 'JUMPING',
@@ -1635,14 +1654,14 @@
      * Blinking coefficient.
      * @const
      */
-    Trex.BLINK_TIMING = 7000;
+    Baby.BLINK_TIMING = 7000;
 
 
     /**
      * Animation config for different states.
      * @enum {Object}
      */
-    Trex.animFrames = {
+    Baby.animFrames = {
         WAITING: {
             frames: [44, 0],
             msPerFrame: 1000 / 3
@@ -1666,7 +1685,7 @@
     };
 
 
-    Trex.prototype = {
+    Baby.prototype = {
         /**
          * T-rex player initaliser.
          * Sets the t-rex to blink at random intervals.
@@ -1678,7 +1697,7 @@
             this.minJumpHeight = this.groundYPos - this.config.MIN_JUMP_HEIGHT;
 
             this.draw(0, 0);
-            this.update(0, Trex.status.WAITING);
+            this.update(0, Baby.status.WAITING);
         },
 
         /**
@@ -1693,7 +1712,7 @@
         /**
          * Set the animation status.
          * @param {!number} deltaTime
-         * @param {Trex.status} status Optional status to switch to.
+         * @param {Baby.status} status Optional status to switch to.
          */
         update: function (deltaTime, opt_status) {
             this.timer += deltaTime;
@@ -1702,10 +1721,10 @@
             if (opt_status) {
                 this.status = opt_status;
                 this.currentFrame = 0;
-                this.msPerFrame = Trex.animFrames[opt_status].msPerFrame;
-                this.currentAnimFrames = Trex.animFrames[opt_status].frames;
+                this.msPerFrame = Baby.animFrames[opt_status].msPerFrame;
+                this.currentAnimFrames = Baby.animFrames[opt_status].frames;
 
-                if (opt_status == Trex.status.WAITING) {
+                if (opt_status == Baby.status.WAITING) {
                     this.animStartTime = getTimeStamp();
                     this.setBlinkDelay();
                 }
@@ -1717,7 +1736,7 @@
                     this.config.INTRO_DURATION) * deltaTime);
             }
 
-            if (this.status == Trex.status.WAITING) {
+            if (this.status == Baby.status.WAITING) {
                 this.blink(getTimeStamp());
             } else {
                 this.draw(this.currentAnimFrames[this.currentFrame], 0);
@@ -1745,7 +1764,7 @@
         draw: function (x, y) {
             var sourceX = x;
             var sourceY = y;
-            var sourceWidth = this.ducking && this.status != Trex.status.CRASHED ?
+            var sourceWidth = this.ducking && this.status != Baby.status.CRASHED ?
                 this.config.WIDTH_DUCK : this.config.WIDTH;
             var sourceHeight = this.config.HEIGHT;
 
@@ -1761,14 +1780,14 @@
             sourceY += this.spritePos.y;
 
             // Ducking.
-            if (this.ducking && this.status != Trex.status.CRASHED) {
+            if (this.ducking && this.status != Baby.status.CRASHED) {
                 this.canvasCtx.drawImage(Runner.imageSprite, sourceX, sourceY,
                     sourceWidth, sourceHeight,
                     this.xPos, this.yPos,
                     this.config.WIDTH_DUCK, this.config.HEIGHT);
             } else {
-                // Crashed whilst ducking. Trex is standing up so needs adjustment.
-                if (this.ducking && this.status == Trex.status.CRASHED) {
+                // Crashed whilst ducking. Baby is standing up so needs adjustment.
+                if (this.ducking && this.status == Baby.status.CRASHED) {
                     this.xPos++;
                 }
                 // Standing / running
@@ -1783,7 +1802,7 @@
          * Sets a random time for the blink to happen.
          */
         setBlinkDelay: function () {
-            this.blinkDelay = Math.ceil(Math.random() * Trex.BLINK_TIMING);
+            this.blinkDelay = Math.ceil(Math.random() * Baby.BLINK_TIMING);
         },
 
         /**
@@ -1811,7 +1830,7 @@
          */
         startJump: function (speed) {
             if (!this.jumping) {
-                this.update(0, Trex.status.JUMPING);
+                this.update(0, Baby.status.JUMPING);
                 // Tweak the jump velocity based on the speed.
                 this.jumpVelocity = this.config.INIITAL_JUMP_VELOCITY - (speed / 10);
                 this.jumping = true;
@@ -1836,10 +1855,10 @@
          * @param {number} speed
          */
         updateJump: function (deltaTime, speed) {
-            var msPerFrame = Trex.animFrames[this.status].msPerFrame;
+            var msPerFrame = Baby.animFrames[this.status].msPerFrame;
             var framesElapsed = deltaTime / msPerFrame;
 
-            // Speed drop makes Trex fall faster.
+            // Speed drop makes Baby fall faster.
             if (this.speedDrop) {
                 this.yPos += Math.round(this.jumpVelocity *
                     this.config.SPEED_DROP_COEFFICIENT * framesElapsed);
@@ -1880,11 +1899,11 @@
          * @param {boolean} isDucking.
          */
         setDuck: function (isDucking) {
-            if (isDucking && this.status != Trex.status.DUCKING) {
-                this.update(0, Trex.status.DUCKING);
+            if (isDucking && this.status != Baby.status.DUCKING) {
+                this.update(0, Baby.status.DUCKING);
                 this.ducking = true;
-            } else if (this.status == Trex.status.DUCKING) {
-                this.update(0, Trex.status.RUNNING);
+            } else if (this.status == Baby.status.DUCKING) {
+                this.update(0, Baby.status.RUNNING);
                 this.ducking = false;
             }
         },
@@ -1897,7 +1916,7 @@
             this.jumpVelocity = 0;
             this.jumping = false;
             this.ducking = false;
-            this.update(0, Trex.status.RUNNING);
+            this.update(0, Baby.status.RUNNING);
             this.midair = false;
             this.speedDrop = false;
             this.jumpCount = 0;
