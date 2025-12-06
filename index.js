@@ -1989,7 +1989,7 @@
         ACHIEVEMENT_DISTANCE: 100,
 
         // Used for conversion from pixel distance to a scaled unit.
-        COEFFICIENT: 0.025,
+        COEFFICIENT: 0.04,
 
         // Flash duration in milliseconds.
         FLASH_DURATION: 1000 / 4,
