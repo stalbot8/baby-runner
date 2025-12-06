@@ -809,7 +809,7 @@
             // Show achievement message only once when reaching 100 for the first time
             const actualDistance = this.distanceMeter.getActualDistance(Math.ceil(this.distanceRan));
             console.log("Actual distance:", actualDistance, "Achievement shown:", this.achievementShown);
-            if (actualDistance >= 100 && !this.achievementShown) {
+            if (actualDistance >= 1000 && !this.achievementShown) {
                 console.log("Showing achievement message!");
                 this.achievementShown = true;
                 showMessage();
